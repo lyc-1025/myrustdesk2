@@ -222,15 +222,16 @@ class PrivacyModeService : Service() {
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                     "huawei_honor_secure_opaque_overlay",
                     secure = true,
-                    opaque = true,
-                    alphaOverride = 255
+//                    opaque = true,
+//                    alphaOverride = 255
                 )
             )
         } else if (canDrawAppOverlay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             specs.add(
                 OverlaySpec(
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                    "app_overlay"
+                    "app_overlay",
+                    secure = true
                 )
             )
         }
@@ -238,7 +239,8 @@ class PrivacyModeService : Service() {
         specs.add(
             OverlaySpec(
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                "accessibility_overlay"
+                "accessibility_overlay",
+                secure = true
             )
         )
 
