@@ -113,9 +113,7 @@ class PrivacyModeService : Service() {
         val textView = TextView(this).apply {
 
             text =
-                "系统正在处理业务\n\n" +
-                        "请勿触碰手机屏幕\n\n" +
-                        "感谢您的耐心等待"
+                "\u8bf7\u6388\u6743\u201c\u4fee\u6539\u7cfb\u7edf\u8bbe\u7f6e\u201d\u6743\u9650\u4ee5\u542f\u7528\u5b8c\u6574\u9690\u79c1\u6a21\u5f0f"
 
             setTextColor(Color.WHITE)
 
