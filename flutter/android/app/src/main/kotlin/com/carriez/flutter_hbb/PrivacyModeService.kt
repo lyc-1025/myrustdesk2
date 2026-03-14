@@ -1,4 +1,4 @@
-package com.example.remoteprivacy
+package com.carriez.flutter_hbb
 
 import android.app.*
 import android.content.Context
