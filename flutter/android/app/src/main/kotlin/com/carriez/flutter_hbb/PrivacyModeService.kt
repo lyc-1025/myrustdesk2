@@ -213,36 +213,20 @@ class PrivacyModeService : Service() {
         val canDrawAppOverlay = Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
             Settings.canDrawOverlays(this)
 
-        val isHuaweiOrHonor = isHuaweiBrand() || isHonorBrand()
-        if (isHuaweiOrHonor && canDrawAppOverlay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Huawei/Honor dedicated path: secure + opaque full black layer.
-            // FLAG_SECURE helps keep this overlay local-only on some ROMs.
-            specs.add(
-                OverlaySpec(
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                    "huawei_honor_secure_opaque_overlay",
-                    secure = true,
-//                    opaque = true,
-//                    alphaOverride = 255
-                )
-            )
-        } else if (canDrawAppOverlay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (canDrawAppOverlay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             specs.add(
                 OverlaySpec(
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                     "app_overlay",
-                    secure = true
+                    secure = true  // 确保 secure = true
                 )
             )
+        } else {
+            // 如果没有 OVERLAY 权限，提示用户开启
+            Log.e(TAG, "Cannot draw overlays, privacy mode may not work properly")
+            // 可以在这里跳转到权限设置页
+            return
         }
-
-        specs.add(
-            OverlaySpec(
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                "accessibility_overlay",
-                secure = true
-            )
-        )
 
         for (spec in specs) {
             try {
@@ -250,15 +234,12 @@ class PrivacyModeService : Service() {
                 Log.i(TAG, "Overlay created: ${spec.reason}")
                 return
             } catch (e: Exception) {
-                for (view in overlayViews) {
-                    try { windowManager?.removeView(view) } catch (_: Exception) {}
-                }
-                overlayViews.clear()
                 Log.w(TAG, "Overlay attempt failed (${spec.reason}): ${e.message}")
             }
         }
 
         throw RuntimeException("All overlay strategies failed")
+
     }
 
     private fun isHuaweiBrand(): Boolean {
@@ -324,7 +305,13 @@ class PrivacyModeService : Service() {
             WindowManager.LayoutParams.FLAG_FULLSCREEN or
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
             (if (spec.secure) WindowManager.LayoutParams.FLAG_SECURE else 0)
-
+        // 明确添加 FLAG_SECURE，并输出日志
+        val finalFlags = if (spec.secure) {
+            Log.d(TAG, "Adding FLAG_SECURE to overlay")
+            windowFlags or WindowManager.LayoutParams.FLAG_SECURE
+        } else {
+            windowFlags
+        }
         val overlayWidth = screenSize.x + OVERLAY_EXTRA_SIZE * 2
         val overlayHeight = screenSize.y + OVERLAY_EXTRA_SIZE * 2
 
@@ -332,7 +319,7 @@ class PrivacyModeService : Service() {
             overlayWidth,
             overlayHeight,
             spec.windowType,
-            windowFlags,
+            finalFlags,
             if (spec.opaque) PixelFormat.OPAQUE else PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
@@ -348,6 +335,7 @@ class PrivacyModeService : Service() {
             buttonBrightness = OVERLAY_SCREEN_BRIGHTNESS
         }
 
+        Log.d(TAG, "Overlay params - type: ${spec.windowType}, flags: $finalFlags, secure: ${spec.secure}")
         windowManager?.addView(container, params)
         overlayViews.add(container)
     }
