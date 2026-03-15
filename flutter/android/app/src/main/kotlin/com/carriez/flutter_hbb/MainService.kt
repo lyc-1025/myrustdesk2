@@ -189,9 +189,9 @@ class MainService : Service() {
 
                 try {
                     if (enable) {
-                        PrivacyModeService.startPrivacyMode(this)
+                        InputService.ctx?.showPrivacyOverlay()
                     } else {
-                        PrivacyModeService.stopPrivacyMode(this)
+                        InputService.ctx?.hidePrivacyOverlay()
                     }
                 } catch (e: Exception) {
                     Log.e(logTag, "toggle_privacy_mode failed", e)
@@ -264,7 +264,7 @@ class MainService : Service() {
 
     override fun onDestroy() {
         // Stop privacy mode if active (prevent permanent black screen on disconnect)
-        PrivacyModeService.stopPrivacyMode(this)
+        InputService.ctx?.hidePrivacyOverlay()
         checkMediaPermission()
         stopService(Intent(this, FloatingWindowService::class.java))
         super.onDestroy()
@@ -496,7 +496,7 @@ class MainService : Service() {
         _isAudioStart = false
 
         // Stop privacy mode if active (prevent permanent black screen)
-        PrivacyModeService.stopPrivacyMode(this)
+        InputService.ctx?.hidePrivacyOverlay()
 
         stopCapture()
 

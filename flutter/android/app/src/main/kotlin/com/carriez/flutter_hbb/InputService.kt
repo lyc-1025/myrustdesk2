@@ -809,6 +809,12 @@ class InputService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        ctx = this
+        Log.d("InputService", "InputService created")
+    }
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         ctx = this
