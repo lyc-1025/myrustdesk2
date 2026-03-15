@@ -157,7 +157,7 @@ class InputService : AccessibilityService() {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                         WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                        WindowManager.LayoutParams.FLAG_FULLSCREEN or
+                        WindowManager.LayoutParams.FLAG_FULLSCREEN,
 //                        WindowManager.LayoutParams.FLAG_SECURE,  // ② 必须添加 FLAG_SECURE
 
                 PixelFormat.TRANSLUCENT
