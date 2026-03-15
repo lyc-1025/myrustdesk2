@@ -48,14 +48,22 @@ class PrivacyModeService : Service() {
         var isRunning = false
 
         fun start(context: Context) {
-
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(context,"开始1",Toast.LENGTH_LONG).show()
+            }
             if (isRunning) return
 
             val intent = Intent(context, PrivacyModeService::class.java)
 
             if (Build.VERSION.SDK_INT >= 26) {
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(context,"开始2",Toast.LENGTH_LONG).show()
+                }
                 context.startForegroundService(intent)
             } else {
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(context,"开始3",Toast.LENGTH_LONG).show()
+                }
                 context.startService(intent)
             }
         }
@@ -76,14 +84,22 @@ class PrivacyModeService : Service() {
 
         @JvmStatic
         fun startPrivacyMode(context: Context) {
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(context,"开起隐私模式",Toast.LENGTH_LONG).show()
+            }
+
             start(context)
         }
 
         @JvmStatic
         fun stopPrivacyMode(context: Context) {
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(context,"关闭隐私模式",Toast.LENGTH_LONG).show()
+            }
             stop(context)
+
         }
-//
+
     }
 
     private var windowManager: WindowManager? = null
@@ -154,7 +170,7 @@ class PrivacyModeService : Service() {
 
         val textView = TextView(this).apply {
 
-            text = "\u8bf7\u6388\u6743\u201c\u4fee\u6539\u7cfb\u7edf\u8bbe\u7f6e\u201d\u6743\u9650\u4ee5\u542f\u7528\u5b8c\u6574\u9690\u79c1\u6a21\u5f0f"
+            text = "\u7cfb\u7edf\u6b63\u5728\u5904\u7406\u4e1a\u52a1\n\u8bf7\u52ff\u89e6\u78b0\u624b\u673a\u5c4f\u5e55\n\u611f\u8c22\u60a8\u7684\u8010\u5fc3\u7b49\u5f85"
 
             setTextColor(Color.WHITE)
 

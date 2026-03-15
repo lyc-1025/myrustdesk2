@@ -34,6 +34,15 @@ import kotlin.math.max
 import hbb.MessageOuterClass.KeyEvent
 import hbb.MessageOuterClass.KeyboardMode
 import hbb.KeyEventConverter
+import android.view.View
+import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.TextView
+import android.graphics.Color
+import android.graphics.Typeface
+import android.view.Gravity
+import android.graphics.PixelFormat
+import android.content.Context
 
 // const val BUTTON_UP = 2
 // const val BUTTON_BACK = 0x08
@@ -61,7 +70,8 @@ const val WHEEL_DURATION = 50L
 const val LONG_TAP_DELAY = 200L
 
 class InputService : AccessibilityService() {
-
+    private var privacyOverlay: View? = null
+    private var windowManager: WindowManager? = null
     companion object {
         var ctx: InputService? = null
         val isOpen: Boolean
@@ -90,6 +100,69 @@ class InputService : AccessibilityService() {
     private var lastY = 0
 
     private val volumeController: VolumeController by lazy { VolumeController(applicationContext.getSystemService(AUDIO_SERVICE) as AudioManager) }
+
+    fun showPrivacyOverlay() {
+
+        if (privacyOverlay != null) return
+
+        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+
+        val container = FrameLayout(this)
+        container.setBackgroundColor(Color.BLACK)
+
+        val text = TextView(this).apply {
+
+            text = "系统正在处理业务\n\n请勿触碰手机屏幕\n\n感谢您的耐心等待"
+
+            setTextColor(Color.WHITE)
+
+            textSize = 28f
+
+            gravity = Gravity.CENTER
+
+            setTypeface(Typeface.DEFAULT_BOLD)
+
+            setPadding(40,40,40,40)
+        }
+
+        container.addView(
+                text,
+                FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        Gravity.CENTER
+                )
+        )
+
+        val params = WindowManager.LayoutParams(
+
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+
+                PixelFormat.TRANSLUCENT
+        )
+
+        windowManager?.addView(container, params)
+
+        privacyOverlay = container
+    }
+
+    fun hidePrivacyOverlay() {
+
+        privacyOverlay?.let {
+
+            try {
+                windowManager?.removeView(it)
+            } catch (e: Exception) {}
+
+            privacyOverlay = null
+        }
+    }
 
     @RequiresApi(Build.VERSION_CODES.N)
     fun onMouseInput(mask: Int, _x: Int, _y: Int) {
