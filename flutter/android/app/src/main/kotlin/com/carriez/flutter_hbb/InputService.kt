@@ -102,37 +102,46 @@ class InputService : AccessibilityService() {
     private val volumeController: VolumeController by lazy { VolumeController(applicationContext.getSystemService(AUDIO_SERVICE) as AudioManager) }
 
     fun showPrivacyOverlay() {
-
-        if (privacyOverlay != null) return
+        Log.d("InputService", "showPrivacyOverlay called, current thread: ${Thread.currentThread().name}")
+        if (privacyOverlay != null) {
+            Log.d("InputService", "Overlay already exists")
+            return
+        }
+        // 确保在UI线程
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            Log.e("InputService", "Not on UI thread!")
+            Handler(Looper.getMainLooper()).post { showPrivacyOverlay() }
+            return
+        }
 
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
         val container = FrameLayout(this)
         container.setBackgroundColor(Color.BLACK)
 
-        val text = TextView(this).apply {
-
-            text = "系统正在处理业务\n\n请勿触碰手机屏幕\n\n感谢您的耐心等待"
-
-            setTextColor(Color.WHITE)
-
-            textSize = 28f
-
-            gravity = Gravity.CENTER
-
-            setTypeface(Typeface.DEFAULT_BOLD)
-
-            setPadding(40,40,40,40)
-        }
-
-        container.addView(
-                text,
-                FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.WRAP_CONTENT,
-                        FrameLayout.LayoutParams.WRAP_CONTENT,
-                        Gravity.CENTER
-                )
-        )
+//        val text = TextView(this).apply {
+//
+//            text = "系统正在处理业务\n\n请勿触碰手机屏幕\n\n感谢您的耐心等待"
+//
+//            setTextColor(Color.WHITE)
+//
+//            textSize = 28f
+//
+//            gravity = Gravity.CENTER
+//
+//            setTypeface(Typeface.DEFAULT_BOLD)
+//
+//            setPadding(40,40,40,40)
+//        }
+//
+//        container.addView(
+//                text,
+//                FrameLayout.LayoutParams(
+//                        FrameLayout.LayoutParams.WRAP_CONTENT,
+//                        FrameLayout.LayoutParams.WRAP_CONTENT,
+//                        Gravity.CENTER
+//                )
+//        )
 
         val params = WindowManager.LayoutParams(
 
@@ -149,14 +158,21 @@ class InputService : AccessibilityService() {
                         WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                         WindowManager.LayoutParams.FLAG_FULLSCREEN or
-                        WindowManager.LayoutParams.FLAG_SECURE,  // ② 必须添加 FLAG_SECURE
+//                        WindowManager.LayoutParams.FLAG_SECURE,  // ② 必须添加 FLAG_SECURE
 
                 PixelFormat.TRANSLUCENT
-        )
+        ).apply {
+            // 添加日志查看最终参数
+            Log.d("InputService", "Window params - type: $type, flags: $flags")
+        }
 
-        windowManager?.addView(container, params)
-
-        privacyOverlay = container
+        try {
+            windowManager?.addView(container, params)
+            privacyOverlay = container
+            Log.d("InputService", "Overlay added successfully")
+        } catch (e: Exception) {
+            Log.e("InputService", "Failed to add overlay", e)
+        }
     }
 
     fun hidePrivacyOverlay() {
